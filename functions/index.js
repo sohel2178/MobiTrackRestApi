@@ -40,6 +40,7 @@ app.get('/device',(req,res)=>{
 })
 
 app.post('/device',(req,res)=>{
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=600');
     
     const macId =req.body.macid;
 
@@ -52,15 +53,27 @@ app.post('/device',(req,res)=>{
 
     if(macId){
         const dbRef = firebaseApp.database().ref("/Devices/"+macId);
+        const dataRef = firebaseApp.database().ref("/Data/"+macId);
 
         const key = dbRef.push().key;
 
         dbRef.set(data).then(()=>{
-            return res.status(201).json({
-                message:"Data Added Successfully"
+            return dataRef.child(key).set(data).then(()=>{
+                return res.status(201).json({
+                    message:"Data Added Successfully"
+                })
+            }).catch(err=>{
+                res.status(500).json({
+                    message:"Problem in Pushing Data",
+                    error:err
+                });
             })
+            
         }).catch(err=>{
-            res.status(500).json(err);
+            res.status(500).json({
+                message:"Problem in Update Data",
+                error:err
+            });
         })
     }else{
         return res.status(400).json({
@@ -102,7 +115,7 @@ app.use((err,req,res,next) =>{
 //
 exports.app = functions.https.onRequest(app);
 
-exports.OnDataUpdate = functions.database.ref('/Devices/{id}').onWrite((snapshot,context)=>{
+/* exports.OnDataUpdate = functions.database.ref('/Devices/{id}').onWrite((snapshot,context)=>{
     console.log(snapshot.after.val());
     const paramKey = context.params.id
     const data = snapshot.after.val();
@@ -110,5 +123,5 @@ exports.OnDataUpdate = functions.database.ref('/Devices/{id}').onWrite((snapshot
     return snapshot.after.ref.parent.parent.child("Data").child(paramKey).push().set(data);
 
 })
-
+ */
 
