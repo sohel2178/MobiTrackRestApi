@@ -51,11 +51,11 @@ app.post('/device',(req,res)=>{
     }
 
     if(macId){
-        const dbRef = firebaseApp.database().ref("/"+macId);
+        const dbRef = firebaseApp.database().ref("/Devices/"+macId);
 
         const key = dbRef.push().key;
 
-        dbRef.child(key).set(data).then(()=>{
+        dbRef.set(data).then(()=>{
             return res.status(201).json({
                 message:"Data Added Successfully"
             })
@@ -101,5 +101,14 @@ app.use((err,req,res,next) =>{
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 //
 exports.app = functions.https.onRequest(app);
+
+exports.OnDataUpdate = functions.database.ref('/Devices/{id}').onWrite((snapshot,context)=>{
+    console.log(snapshot.after.val());
+    const paramKey = context.params.id
+    const data = snapshot.after.val();
+
+    return snapshot.after.ref.parent.parent.child("Data").child(paramKey).push().set(data);
+
+})
 
 
